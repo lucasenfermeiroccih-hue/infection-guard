@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trash2, X, GripVertical, LogOut } from "lucide-react";
 import { STORAGE_KEYS, readLS, writeLS, removeLS, uid } from "@/lib/storage";
-import type { KanbanBoard, KanbanColumn, KanbanTask } from "@/lib/types";
+import type { KanbanBoard, KanbanColumn, KanbanTask, Recurrence } from "@/lib/types";
+import { Repeat } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/kanban")({
@@ -42,6 +43,7 @@ function KanbanPage() {
   const [newTaskCol, setNewTaskCol] = useState<string>("");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDesc, setNewTaskDesc] = useState("");
+  const [newTaskRecurrence, setNewTaskRecurrence] = useState<Recurrence>("none");
   const [removeColId, setRemoveColId] = useState<string | null>(null);
   const [moveTargetCol, setMoveTargetCol] = useState<string>("");
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
@@ -94,9 +96,9 @@ function KanbanPage() {
   const addTask = () => {
     if (!newTaskTitle.trim()) { toast.error("Título obrigatório"); return; }
     if (!newTaskCol) { toast.error("Selecione uma coluna"); return; }
-    const t: KanbanTask = { id: uid(), columnId: newTaskCol, title: newTaskTitle.trim(), description: newTaskDesc.trim() || undefined };
+    const t: KanbanTask = { id: uid(), columnId: newTaskCol, title: newTaskTitle.trim(), description: newTaskDesc.trim() || undefined, recurrence: newTaskRecurrence };
     persist({ ...board, tasks: [...board.tasks, t] });
-    setNewTaskTitle(""); setNewTaskDesc(""); setNewTaskOpen(false);
+    setNewTaskTitle(""); setNewTaskDesc(""); setNewTaskRecurrence("none"); setNewTaskOpen(false);
   };
 
   const removeTask = (id: string) => {
@@ -213,7 +215,19 @@ function KanbanPage() {
             <div className="space-y-2">
               <Label>Descrição (opcional)</Label>
               <Textarea value={newTaskDesc} onChange={(e) => setNewTaskDesc(e.target.value)} />
+            <div className="space-y-2">
+              <Label>Recorrência</Label>
+              <Select value={newTaskRecurrence} onValueChange={(v) => setNewTaskRecurrence(v as Recurrence)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não se repete</SelectItem>
+                  <SelectItem value="daily">Diariamente</SelectItem>
+                  <SelectItem value="weekly">Semanalmente</SelectItem>
+                  <SelectItem value="monthly">Mensalmente</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setNewTaskOpen(false)}>Cancelar</Button>
@@ -319,6 +333,12 @@ function TaskCard({ task, onRemove, dragging }: { task: KanbanTask; onRemove: ()
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{task.title}</div>
         {task.description && <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</div>}
+        {task.recurrence && task.recurrence !== "none" && (
+          <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium bg-primary/10 text-primary rounded px-1.5 py-0.5">
+            <Repeat className="h-3 w-3" />
+            {task.recurrence === "daily" ? "Diária" : task.recurrence === "weekly" ? "Semanal" : "Mensal"}
+          </div>
+        )}
       </div>
       <Button
         variant="ghost"
