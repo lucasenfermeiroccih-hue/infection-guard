@@ -1,9 +1,12 @@
-import { createFileRoute, Outlet, redirect, useNavigate, useRouterState, Link } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut } from "lucide-react";
-import { STORAGE_KEYS, readLS, removeLS } from "@/lib/storage";
+import { STORAGE_KEYS, removeLS, writeLS } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
+import { ensureSeed } from "@/lib/seed";
 import type { Session } from "@/lib/types";
 
 const titles: Record<string, string> = {
@@ -16,11 +19,6 @@ const titles: Record<string, string> = {
 };
 
 export const Route = createFileRoute("/_app")({
-  beforeLoad: () => {
-    if (typeof window === "undefined") return;
-    const s = readLS<Session | null>(STORAGE_KEYS.session, null);
-    if (!s) throw redirect({ to: "/" });
-  },
   component: AppLayout,
 });
 
@@ -28,11 +26,42 @@ function AppLayout() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (r) => r.location.pathname });
   const title = titles[path] ?? (path.startsWith("/actions/") ? "Detalhes da Ação" : "CCIH 5W2H");
+  const [checked, setChecked] = useState(false);
 
-  const logout = () => {
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        removeLS(STORAGE_KEYS.session);
+        navigate({ to: "/" });
+      } else {
+        ensureSeed();
+        const local: Session = {
+          userId: session.user.id,
+          name: session.user.email ?? "Usuário",
+          role: "ccih",
+        };
+        writeLS(STORAGE_KEYS.session, local);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) navigate({ to: "/" });
+      else {
+        ensureSeed();
+        setChecked(true);
+      }
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, [navigate]);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
     removeLS(STORAGE_KEYS.session);
     navigate({ to: "/" });
   };
+
+  if (!checked) return null;
 
   return (
     <SidebarProvider>
