@@ -38,7 +38,7 @@ function ReportsPage() {
   const [infection, setInfection] = useState<string>(ALL);
   const [status, setStatus] = useState<string>(ALL);
 
-  useEffect(() => { setAll(readLS<Action5W2H[]>(STORAGE_KEYS.actions, [])); }, []);
+  useEffect(() => { listActions().then(setAll).catch(() => setAll([])); }, []);
 
   const filtered = useMemo(() => all.filter((a) =>
     (sector === ALL || a.where === sector) &&
