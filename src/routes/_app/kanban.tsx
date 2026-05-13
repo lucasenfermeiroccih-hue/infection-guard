@@ -186,7 +186,7 @@ function KanbanPage() {
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragEnd={onDragEnd}>
           <div className="flex gap-4 h-full min-w-max pb-2">
             {sortedColumns.map((col) => {
-              const colTasks = board.tasks.filter((t) => t.columnId === col.id);
+              const colTasks = tasks.filter((t) => t.columnId === col.id);
               return (
                 <ColumnView
                   key={col.id}
