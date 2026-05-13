@@ -215,7 +215,19 @@ function KanbanPage() {
             <div className="space-y-2">
               <Label>Descrição (opcional)</Label>
               <Textarea value={newTaskDesc} onChange={(e) => setNewTaskDesc(e.target.value)} />
+            <div className="space-y-2">
+              <Label>Recorrência</Label>
+              <Select value={newTaskRecurrence} onValueChange={(v) => setNewTaskRecurrence(v as Recurrence)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não se repete</SelectItem>
+                  <SelectItem value="daily">Diariamente</SelectItem>
+                  <SelectItem value="weekly">Semanalmente</SelectItem>
+                  <SelectItem value="monthly">Mensalmente</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setNewTaskOpen(false)}>Cancelar</Button>
