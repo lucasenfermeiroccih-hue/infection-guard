@@ -52,18 +52,23 @@ function NewActionPage() {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    const all = readLS<Action5W2H[]>(STORAGE_KEYS.actions, []);
-    const action: Action5W2H = {
-      id: uid(),
-      ...data,
-      howMuch: data.howMuch || "",
-      status: "planejado",
-      createdAt: new Date().toISOString(),
-    };
-    writeLS(STORAGE_KEYS.actions, [action, ...all]);
-    toast.success("Ação criada e responsáveis notificados");
-    navigate({ to: "/actions" });
+  const onSubmit = async (data: FormValues) => {
+    try {
+      await createAction({
+        what: data.what,
+        why: data.why,
+        where: data.where,
+        who: data.who,
+        when: data.when,
+        how: data.how,
+        howMuch: data.howMuch || "",
+        infectionType: data.infectionType,
+      });
+      toast.success("Ação criada e responsáveis notificados");
+      navigate({ to: "/actions" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    }
   };
 
   const fields: { name: keyof FormValues; label: string; placeholder: string; long?: boolean }[] = [
