@@ -52,11 +52,14 @@ export interface Action5W2H {
   createdAt: string;
 }
 
+export type Recurrence = "none" | "daily" | "weekly" | "monthly";
+
 export interface KanbanTask {
   id: string;
   columnId: string;
   title: string;
   description?: string;
+  recurrence?: Recurrence;
 }
 
 export interface KanbanColumn {
