@@ -96,9 +96,9 @@ function KanbanPage() {
   const addTask = () => {
     if (!newTaskTitle.trim()) { toast.error("Título obrigatório"); return; }
     if (!newTaskCol) { toast.error("Selecione uma coluna"); return; }
-    const t: KanbanTask = { id: uid(), columnId: newTaskCol, title: newTaskTitle.trim(), description: newTaskDesc.trim() || undefined };
+    const t: KanbanTask = { id: uid(), columnId: newTaskCol, title: newTaskTitle.trim(), description: newTaskDesc.trim() || undefined, recurrence: newTaskRecurrence };
     persist({ ...board, tasks: [...board.tasks, t] });
-    setNewTaskTitle(""); setNewTaskDesc(""); setNewTaskOpen(false);
+    setNewTaskTitle(""); setNewTaskDesc(""); setNewTaskRecurrence("none"); setNewTaskOpen(false);
   };
 
   const removeTask = (id: string) => {
