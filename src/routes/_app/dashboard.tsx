@@ -1,61 +1,176 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Activity, TrendingDown, ListChecks, AlertTriangle, Plus } from "lucide-react";
+import {
+  Activity,
+  ListChecks,
+  AlertTriangle,
+  Plus,
+  CheckCircle2,
+  Clock,
+  CircleDashed,
+  Flame,
+  KanbanSquare,
+} from "lucide-react";
 import { STORAGE_KEYS, readLS } from "@/lib/storage";
-import type { Action5W2H, IrasPoint } from "@/lib/types";
+import type { Action5W2H, KanbanBoard } from "@/lib/types";
 import { useEffect, useState, useMemo } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — CCIH 5W2H" },
-      { name: "description", content: "Indicadores de IRAS e progresso de ações de controle de infecção." },
+      {
+        name: "description",
+        content:
+          "Indicadores de conclusão, andamento e tarefas das ferramentas Kanban e 5W2H.",
+      },
     ],
   }),
   component: DashboardPage,
 });
 
+type ColTone = "todo" | "doing" | "done" | "other";
+
+function classifyColumn(title: string): ColTone {
+  const t = title.toLowerCase();
+  if (/(a fazer|tarefa a fazer|todo|planejad|backlog)/.test(t)) return "todo";
+  if (/(andamento|progresso|doing|in progress|execu)/.test(t)) return "doing";
+  if (/(conclu|done|finaliz|feito)/.test(t)) return "done";
+  return "other";
+}
+
 function DashboardPage() {
   const [actions, setActions] = useState<Action5W2H[]>([]);
-  const [iras, setIras] = useState<IrasPoint[]>([]);
+  const [board, setBoard] = useState<KanbanBoard>({
+    title: "",
+    columns: [],
+    tasks: [],
+  });
 
   useEffect(() => {
     setActions(readLS<Action5W2H[]>(STORAGE_KEYS.actions, []));
-    setIras(readLS<IrasPoint[]>(STORAGE_KEYS.iras, []));
+    setBoard(
+      readLS<KanbanBoard>(STORAGE_KEYS.kanban, {
+        title: "",
+        columns: [],
+        tasks: [],
+      }),
+    );
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);
-  const inProgress = actions.filter((a) => a.status === "em_andamento").length;
-  const overdue = actions.filter((a) => a.status !== "concluido" && a.when < today).length;
-  const lastRate = useMemo(() => {
-    if (!iras.length) return 0;
-    const last = iras[iras.length - 1].date;
-    const ofMonth = iras.filter((p) => p.date === last);
-    return +(ofMonth.reduce((s, p) => s + p.rate, 0) / ofMonth.length).toFixed(2);
-  }, [iras]);
 
-  const adesao = 87;
+  // 5W2H stats
+  const a = useMemo(() => {
+    const todo = actions.filter((x) => x.status === "planejado").length;
+    const doing = actions.filter((x) => x.status === "em_andamento").length;
+    const done = actions.filter((x) => x.status === "concluido").length;
+    const overdue = actions.filter(
+      (x) => x.status !== "concluido" && x.when < today,
+    ).length;
+    return { total: actions.length, todo, doing, done, overdue };
+  }, [actions, today]);
 
-  const chartData = useMemo(() => {
-    const byDate = new Map<string, Record<string, number | string>>();
-    iras.forEach((p) => {
-      const row = byDate.get(p.date) ?? { date: p.date };
-      row[p.sector] = p.rate;
-      byDate.set(p.date, row);
+  // Kanban stats
+  const k = useMemo(() => {
+    const colMap = new Map(board.columns.map((c) => [c.id, classifyColumn(c.title)]));
+    let todo = 0,
+      doing = 0,
+      done = 0,
+      other = 0;
+    board.tasks.forEach((t) => {
+      const tone = colMap.get(t.columnId) ?? "other";
+      if (tone === "todo") todo++;
+      else if (tone === "doing") doing++;
+      else if (tone === "done") done++;
+      else other++;
     });
-    return Array.from(byDate.values()).sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  }, [iras]);
+    return { total: board.tasks.length, todo, doing, done, other };
+  }, [board]);
 
-  const sectors = Array.from(new Set(iras.map((p) => p.sector)));
-  const colors = ["hsl(200 75% 45%)", "hsl(160 70% 40%)", "hsl(30 85% 55%)", "hsl(280 60% 55%)"];
+  const totals = {
+    total: a.total + k.total,
+    todo: a.todo + k.todo,
+    doing: a.doing + k.doing,
+    done: a.done + k.done,
+    critical: a.overdue,
+  };
+
+  const adesao = totals.total
+    ? Math.round((totals.done / totals.total) * 100)
+    : 0;
+
+  // Bar chart: comparação Kanban vs 5W2H por status
+  const compareData = [
+    { status: "A Fazer", Kanban: k.todo, "5W2H": a.todo },
+    { status: "Em Andamento", Kanban: k.doing, "5W2H": a.doing },
+    { status: "Concluído", Kanban: k.done, "5W2H": a.done },
+  ];
+
+  // Pie: distribuição global
+  const pieData = [
+    { name: "A Fazer", value: totals.todo, color: "hsl(0 75% 55%)" },
+    { name: "Em Andamento", value: totals.doing, color: "hsl(45 90% 50%)" },
+    { name: "Concluído", value: totals.done, color: "hsl(140 65% 42%)" },
+  ];
 
   const kpis = [
-    { label: "Taxa IRAS (média)", value: `${lastRate}‰`, icon: Activity, hint: "Por 1.000 paciente-dia" },
-    { label: "Adesão a protocolos", value: `${adesao}%`, icon: TrendingDown, hint: "Higienização de mãos" },
-    { label: "Ações em andamento", value: inProgress, icon: ListChecks, hint: `${actions.length} no total` },
-    { label: "Ações atrasadas", value: overdue, icon: AlertTriangle, hint: "Prazo vencido" },
+    {
+      label: "Total de tarefas",
+      value: totals.total,
+      icon: ListChecks,
+      hint: `${a.total} 5W2H · ${k.total} Kanban`,
+      tone: "text-primary",
+    },
+    {
+      label: "A fazer",
+      value: totals.todo,
+      icon: CircleDashed,
+      hint: "Pendentes de início",
+      tone: "text-red-600",
+    },
+    {
+      label: "Em andamento",
+      value: totals.doing,
+      icon: Clock,
+      hint: "Em execução",
+      tone: "text-yellow-600",
+    },
+    {
+      label: "Concluídas",
+      value: totals.done,
+      icon: CheckCircle2,
+      hint: "Finalizadas",
+      tone: "text-green-600",
+    },
+    {
+      label: "Tarefas críticas",
+      value: totals.critical,
+      icon: Flame,
+      hint: "5W2H com prazo vencido",
+      tone: "text-destructive",
+    },
+    {
+      label: "Adesão a protocolos",
+      value: `${adesao}%`,
+      icon: Activity,
+      hint: "Conclusão geral",
+      tone: "text-primary",
+    },
   ];
 
   return (
@@ -63,19 +178,34 @@ function DashboardPage() {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h2 className="text-2xl font-semibold">Visão geral</h2>
-          <p className="text-sm text-muted-foreground">Indicadores de infecção hospitalar e ações em curso.</p>
+          <p className="text-sm text-muted-foreground">
+            Indicadores das ferramentas Kanban e 5W2H.
+          </p>
         </div>
-        <Button asChild>
-          <Link to="/actions/new"><Plus className="h-4 w-4 mr-1" />Nova Ação 5W2H</Link>
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button asChild>
+            <Link to="/actions/new">
+              <Plus className="h-4 w-4 mr-1" />
+              Nova Ação 5W2H
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link to="/kanban">
+              <KanbanSquare className="h-4 w-4 mr-1" />
+              Nova Ação Kanban
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpis.map((k) => (
           <Card key={k.label}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{k.label}</CardTitle>
-              <k.icon className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {k.label}
+              </CardTitle>
+              <k.icon className={`h-4 w-4 ${k.tone}`} />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{k.value}</div>
@@ -85,27 +215,73 @@ function DashboardPage() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Evolução das taxas de IRAS por setor</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Legend />
-                {sectors.map((s, i) => (
-                  <Line key={s} type="monotone" dataKey={s} stroke={colors[i % colors.length]} strokeWidth={2} dot={{ r: 3 }} />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Evolução Kanban × 5W2H por status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={compareData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.4} />
+                  <XAxis dataKey="status" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="Kanban" fill="hsl(200 75% 45%)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="5W2H" fill="hsl(280 60% 55%)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribuição geral das tarefas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label
+                  >
+                    {pieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {totals.critical > 0 && (
+        <Card className="border-destructive/50">
+          <CardHeader className="flex flex-row items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <CardTitle className="text-destructive">
+              {totals.critical} ação(ões) 5W2H com prazo vencido
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/actions">Ver ações 5W2H</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
