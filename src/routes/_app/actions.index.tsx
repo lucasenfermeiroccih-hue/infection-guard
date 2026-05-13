@@ -31,11 +31,9 @@ function ActionsBoard() {
   const [actions, setActions] = useState<Action5W2H[]>([]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  useEffect(() => { setActions(readLS<Action5W2H[]>(STORAGE_KEYS.actions, [])); }, []);
+  useEffect(() => { listActions().then(setActions).catch((e) => toast.error(e.message)); }, []);
 
-  const persist = (a: Action5W2H[]) => { setActions(a); writeLS(STORAGE_KEYS.actions, a); };
-
-  const onDragEnd = (e: DragEndEvent) => {
+  const onDragEnd = async (e: DragEndEvent) => {
     const { active, over } = e;
     if (!over) return;
     const id = String(active.id);
@@ -43,7 +41,10 @@ function ActionsBoard() {
     const targetCol = COLUMNS.find((c) => c.id === overId)?.id
       ?? actions.find((a) => a.id === overId)?.status;
     if (!targetCol) return;
-    persist(actions.map((a) => a.id === id ? { ...a, status: targetCol } : a));
+    const prev = actions;
+    setActions(actions.map((a) => a.id === id ? { ...a, status: targetCol } : a));
+    try { await updateActionStatus(id, targetCol); }
+    catch (err) { setActions(prev); toast.error(err instanceof Error ? err.message : "Erro"); }
   };
 
   return (
