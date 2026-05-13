@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { STORAGE_KEYS, readLS, writeLS, uid } from "@/lib/storage";
-import { SECTORS, INFECTION_TYPES, type Action5W2H, type Sector, type InfectionType, type User } from "@/lib/types";
+import { STORAGE_KEYS, readLS } from "@/lib/storage";
+import { SECTORS, INFECTION_TYPES, type Sector, type InfectionType, type User } from "@/lib/types";
+import { createAction } from "@/lib/actions-api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/actions/new")({
