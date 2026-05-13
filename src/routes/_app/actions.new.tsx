@@ -30,7 +30,7 @@ const schema = z.object({
   who: z.string().trim().min(2).max(120),
   when: z.string().min(1, "Defina uma data"),
   how: z.string().trim().min(3).max(500),
-  howMuch: z.string().trim().max(60).optional().default(""),
+  howMuch: z.string().trim().max(60),
   infectionType: z.enum(INFECTION_TYPES),
 });
 
@@ -56,7 +56,7 @@ function NewActionPage() {
     const action: Action5W2H = {
       id: uid(),
       ...data,
-      howMuch: data.howMuch ?? "",
+      howMuch: data.howMuch || "",
       status: "planejado",
       createdAt: new Date().toISOString(),
     };

@@ -9,38 +9,141 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppReportsRouteImport } from './routes/_app/reports'
+import { Route as AppKanbanRouteImport } from './routes/_app/kanban'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppActionsIndexRouteImport } from './routes/_app/actions.index'
+import { Route as AppActionsNewRouteImport } from './routes/_app/actions.new'
+import { Route as AppActionsIdRouteImport } from './routes/_app/actions.$id'
 
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKanbanRoute = AppKanbanRouteImport.update({
+  id: '/kanban',
+  path: '/kanban',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActionsIndexRoute = AppActionsIndexRouteImport.update({
+  id: '/actions/',
+  path: '/actions/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActionsNewRoute = AppActionsNewRouteImport.update({
+  id: '/actions/new',
+  path: '/actions/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActionsIdRoute = AppActionsIdRouteImport.update({
+  id: '/actions/$id',
+  path: '/actions/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/kanban': typeof AppKanbanRoute
+  '/reports': typeof AppReportsRoute
+  '/settings': typeof AppSettingsRoute
+  '/actions/$id': typeof AppActionsIdRoute
+  '/actions/new': typeof AppActionsNewRoute
+  '/actions/': typeof AppActionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/kanban': typeof AppKanbanRoute
+  '/reports': typeof AppReportsRoute
+  '/settings': typeof AppSettingsRoute
+  '/actions/$id': typeof AppActionsIdRoute
+  '/actions/new': typeof AppActionsNewRoute
+  '/actions': typeof AppActionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/kanban': typeof AppKanbanRoute
+  '/_app/reports': typeof AppReportsRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/actions/$id': typeof AppActionsIdRoute
+  '/_app/actions/new': typeof AppActionsNewRoute
+  '/_app/actions/': typeof AppActionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/kanban'
+    | '/reports'
+    | '/settings'
+    | '/actions/$id'
+    | '/actions/new'
+    | '/actions/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/kanban'
+    | '/reports'
+    | '/settings'
+    | '/actions/$id'
+    | '/actions/new'
+    | '/actions'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/_app/dashboard'
+    | '/_app/kanban'
+    | '/_app/reports'
+    | '/_app/settings'
+    | '/_app/actions/$id'
+    | '/_app/actions/new'
+    | '/_app/actions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +151,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports': {
+      id: '/_app/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/kanban': {
+      id: '/_app/kanban'
+      path: '/kanban'
+      fullPath: '/kanban'
+      preLoaderRoute: typeof AppKanbanRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/actions/': {
+      id: '/_app/actions/'
+      path: '/actions'
+      fullPath: '/actions/'
+      preLoaderRoute: typeof AppActionsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/actions/new': {
+      id: '/_app/actions/new'
+      path: '/actions/new'
+      fullPath: '/actions/new'
+      preLoaderRoute: typeof AppActionsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/actions/$id': {
+      id: '/_app/actions/$id'
+      path: '/actions/$id'
+      fullPath: '/actions/$id'
+      preLoaderRoute: typeof AppActionsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppKanbanRoute: typeof AppKanbanRoute
+  AppReportsRoute: typeof AppReportsRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppActionsIdRoute: typeof AppActionsIdRoute
+  AppActionsNewRoute: typeof AppActionsNewRoute
+  AppActionsIndexRoute: typeof AppActionsIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppDashboardRoute: AppDashboardRoute,
+  AppKanbanRoute: AppKanbanRoute,
+  AppReportsRoute: AppReportsRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppActionsIdRoute: AppActionsIdRoute,
+  AppActionsNewRoute: AppActionsNewRoute,
+  AppActionsIndexRoute: AppActionsIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
