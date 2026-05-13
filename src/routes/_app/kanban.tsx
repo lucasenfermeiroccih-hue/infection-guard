@@ -286,8 +286,18 @@ function ColumnView({
   onRemoveTask: (id: string) => void;
 }) {
   const { setNodeRef } = useSortable({ id: column.id });
+  const t = column.title.toLowerCase();
+  const tone =
+    /(a fazer|tarefa a fazer|todo|planejad)/.test(t)
+      ? { bar: "bg-red-500", bg: "bg-red-500/10", text: "text-red-700 dark:text-red-300" }
+      : /(andamento|progresso|doing|in progress)/.test(t)
+      ? { bar: "bg-yellow-500", bg: "bg-yellow-500/10", text: "text-yellow-700 dark:text-yellow-300" }
+      : /(conclu|done|finaliz)/.test(t)
+      ? { bar: "bg-green-500", bg: "bg-green-500/10", text: "text-green-700 dark:text-green-300" }
+      : { bar: "bg-muted-foreground/30", bg: "bg-muted/40", text: "" };
   return (
-    <div className="w-72 shrink-0 bg-muted/40 rounded-lg flex flex-col max-h-full" ref={setNodeRef}>
+    <div className={`w-72 shrink-0 ${tone.bg} rounded-lg flex flex-col max-h-full overflow-hidden`} ref={setNodeRef}>
+      <div className={`h-1 ${tone.bar}`} />
       <div className="p-3 flex items-center gap-2 border-b">
         {isEditingTitle ? (
           <Input
