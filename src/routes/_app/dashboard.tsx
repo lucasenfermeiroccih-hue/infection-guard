@@ -13,6 +13,7 @@ import {
   KanbanSquare,
 } from "lucide-react";
 import { STORAGE_KEYS, readLS } from "@/lib/storage";
+import { listActions } from "@/lib/actions-api";
 import type { Action5W2H, KanbanBoard } from "@/lib/types";
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -62,7 +63,7 @@ function DashboardPage() {
   });
 
   useEffect(() => {
-    setActions(readLS<Action5W2H[]>(STORAGE_KEYS.actions, []));
+    listActions().then(setActions).catch(() => setActions([]));
     setBoard(
       readLS<KanbanBoard>(STORAGE_KEYS.kanban, {
         title: "",

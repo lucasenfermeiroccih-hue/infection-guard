@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { STORAGE_KEYS, readLS, writeLS, uid } from "@/lib/storage";
-import { SECTORS, INFECTION_TYPES, type Action5W2H, type Sector, type InfectionType, type User } from "@/lib/types";
+import { STORAGE_KEYS, readLS } from "@/lib/storage";
+import { SECTORS, INFECTION_TYPES, type Sector, type InfectionType, type User } from "@/lib/types";
+import { createAction } from "@/lib/actions-api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/actions/new")({
@@ -51,18 +52,23 @@ function NewActionPage() {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    const all = readLS<Action5W2H[]>(STORAGE_KEYS.actions, []);
-    const action: Action5W2H = {
-      id: uid(),
-      ...data,
-      howMuch: data.howMuch || "",
-      status: "planejado",
-      createdAt: new Date().toISOString(),
-    };
-    writeLS(STORAGE_KEYS.actions, [action, ...all]);
-    toast.success("Ação criada e responsáveis notificados");
-    navigate({ to: "/actions" });
+  const onSubmit = async (data: FormValues) => {
+    try {
+      await createAction({
+        what: data.what,
+        why: data.why,
+        where: data.where,
+        who: data.who,
+        when: data.when,
+        how: data.how,
+        howMuch: data.howMuch || "",
+        infectionType: data.infectionType,
+      });
+      toast.success("Ação criada e responsáveis notificados");
+      navigate({ to: "/actions" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    }
   };
 
   const fields: { name: keyof FormValues; label: string; placeholder: string; long?: boolean }[] = [

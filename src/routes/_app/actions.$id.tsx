@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import { STORAGE_KEYS, readLS, writeLS } from "@/lib/storage";
 import type { Action5W2H, ActionStatus } from "@/lib/types";
+import { getAction, updateActionStatus, deleteAction } from "@/lib/actions-api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/actions/$id")({
@@ -24,8 +24,7 @@ function ActionDetail() {
   const [action, setAction] = useState<Action5W2H | null>(null);
 
   useEffect(() => {
-    const all = readLS<Action5W2H[]>(STORAGE_KEYS.actions, []);
-    setAction(all.find((a) => a.id === id) ?? null);
+    getAction(id).then(setAction).catch((e) => toast.error(e.message));
   }, [id]);
 
   if (!action) {
@@ -37,20 +36,25 @@ function ActionDetail() {
     );
   }
 
-  const updateStatus = (s: ActionStatus) => {
-    const all = readLS<Action5W2H[]>(STORAGE_KEYS.actions, []);
-    const next = all.map((a) => a.id === id ? { ...a, status: s } : a);
-    writeLS(STORAGE_KEYS.actions, next);
-    setAction({ ...action, status: s });
-    toast.success("Status atualizado");
+  const updateStatus = async (s: ActionStatus) => {
+    try {
+      await updateActionStatus(id, s);
+      setAction({ ...action, status: s });
+      toast.success("Status atualizado");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
   };
 
-  const remove = () => {
+  const remove = async () => {
     if (!confirm("Remover esta ação?")) return;
-    const all = readLS<Action5W2H[]>(STORAGE_KEYS.actions, []);
-    writeLS(STORAGE_KEYS.actions, all.filter((a) => a.id !== id));
-    toast.success("Ação removida");
-    navigate({ to: "/actions" });
+    try {
+      await deleteAction(id);
+      toast.success("Ação removida");
+      navigate({ to: "/actions" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
   };
 
   const rows: [string, string][] = [
