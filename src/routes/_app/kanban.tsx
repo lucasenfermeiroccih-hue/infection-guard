@@ -11,14 +11,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, X, GripVertical, LogOut } from "lucide-react";
-import { STORAGE_KEYS, readLS, writeLS, removeLS, uid } from "@/lib/storage";
-import type { KanbanBoard, KanbanColumn, KanbanTask, Recurrence } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import { STORAGE_KEYS, readLS, writeLS, removeLS } from "@/lib/storage";
+import type { KanbanColumn, KanbanTask, Recurrence } from "@/lib/types";
+import {
+  loadBoard, createColumn, updateColumnTitle, deleteColumn, reorderColumns,
+  createTask, moveTask, reassignTasks, deleteTask,
+} from "@/lib/kanban-api";
 import { Repeat } from "lucide-react";
 import { toast } from "sonner";
 
