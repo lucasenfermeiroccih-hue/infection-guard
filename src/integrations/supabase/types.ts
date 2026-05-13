@@ -14,16 +14,232 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      actions: {
+        Row: {
+          created_at: string
+          how: string
+          how_much: string | null
+          id: string
+          infection_type: string
+          status: Database["public"]["Enums"]["action_status"]
+          updated_at: string
+          user_id: string
+          what: string
+          when_date: string
+          where_sector: string
+          who: string
+          why: string
+        }
+        Insert: {
+          created_at?: string
+          how: string
+          how_much?: string | null
+          id?: string
+          infection_type: string
+          status?: Database["public"]["Enums"]["action_status"]
+          updated_at?: string
+          user_id: string
+          what: string
+          when_date: string
+          where_sector: string
+          who: string
+          why: string
+        }
+        Update: {
+          created_at?: string
+          how?: string
+          how_much?: string | null
+          id?: string
+          infection_type?: string
+          status?: Database["public"]["Enums"]["action_status"]
+          updated_at?: string
+          user_id?: string
+          what?: string
+          when_date?: string
+          where_sector?: string
+          who?: string
+          why?: string
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          notify_email: boolean
+          notify_push: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          notify_email?: boolean
+          notify_push?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          notify_email?: boolean
+          notify_push?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      iras_series: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          rate: number
+          sector: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          rate: number
+          sector: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          rate?: number
+          sector?: string
+        }
+        Relationships: []
+      }
+      kanban_columns: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kanban_tasks: {
+        Row: {
+          column_id: string
+          created_at: string
+          description: string | null
+          id: string
+          position: number
+          recurrence: Database["public"]["Enums"]["recurrence_type"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          column_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          position?: number
+          recurrence?: Database["public"]["Enums"]["recurrence_type"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          column_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          position?: number
+          recurrence?: Database["public"]["Enums"]["recurrence_type"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kanban_tasks_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_columns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      action_status: "planejado" | "em_andamento" | "concluido"
+      app_role: "ccih" | "diretoria" | "assistencial"
+      recurrence_type: "none" | "daily" | "weekly" | "monthly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +366,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      action_status: ["planejado", "em_andamento", "concluido"],
+      app_role: ["ccih", "diretoria", "assistencial"],
+      recurrence_type: ["none", "daily", "weekly", "monthly"],
+    },
   },
 } as const
