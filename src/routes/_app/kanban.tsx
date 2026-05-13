@@ -43,6 +43,7 @@ function KanbanPage() {
   const [newTaskCol, setNewTaskCol] = useState<string>("");
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDesc, setNewTaskDesc] = useState("");
+  const [newTaskRecurrence, setNewTaskRecurrence] = useState<Recurrence>("none");
   const [removeColId, setRemoveColId] = useState<string | null>(null);
   const [moveTargetCol, setMoveTargetCol] = useState<string>("");
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
