@@ -39,7 +39,9 @@ export const Route = createFileRoute("/_app/kanban")({
 
 function KanbanPage() {
   const navigate = useNavigate();
-  const [board, setBoard] = useState<KanbanBoard>({ title: "Quadro CCIH", columns: [], tasks: [] });
+  const [title, setTitle] = useState("Quadro CCIH");
+  const [columns, setColumns] = useState<KanbanColumn[]>([]);
+  const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [newColOpen, setNewColOpen] = useState(false);
@@ -56,81 +58,106 @@ function KanbanPage() {
   const [editingColTitle, setEditingColTitle] = useState("");
 
   useEffect(() => {
-    const b = readLS<KanbanBoard>(STORAGE_KEYS.kanban, { title: "Quadro CCIH", columns: [], tasks: [] });
-    setBoard(b);
+    setTitle(readLS<string>("ccih_kanban_title", "Quadro CCIH"));
+    loadBoard()
+      .then((b) => { setColumns(b.columns); setTasks(b.tasks); })
+      .catch((e) => toast.error(e.message));
   }, []);
-
-  const persist = (b: KanbanBoard) => { setBoard(b); writeLS(STORAGE_KEYS.kanban, b); };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const sortedColumns = useMemo(() => [...board.columns].sort((a, b) => a.order - b.order), [board.columns]);
+  const sortedColumns = useMemo(() => [...columns].sort((a, b) => a.order - b.order), [columns]);
 
   const onDragStart = (e: DragStartEvent) => {
-    const t = board.tasks.find((x) => x.id === e.active.id);
+    const t = tasks.find((x) => x.id === e.active.id);
     if (t) setActiveTask(t);
   };
 
-  const onDragEnd = (e: DragEndEvent) => {
+  const onDragEnd = async (e: DragEndEvent) => {
     setActiveTask(null);
     const { active, over } = e;
     if (!over) return;
     const taskId = String(active.id);
     const overId = String(over.id);
-    const overTask = board.tasks.find((t) => t.id === overId);
-    const overCol = board.columns.find((c) => c.id === overId);
+    const overTask = tasks.find((t) => t.id === overId);
+    const overCol = columns.find((c) => c.id === overId);
     const targetCol = overCol?.id ?? overTask?.columnId;
     if (!targetCol) return;
-    const tasks = board.tasks.map((t) => (t.id === taskId ? { ...t, columnId: targetCol } : t));
-    persist({ ...board, tasks });
+    const prev = tasks;
+    setTasks(tasks.map((t) => (t.id === taskId ? { ...t, columnId: targetCol } : t)));
+    try { await moveTask(taskId, targetCol); }
+    catch (err) { setTasks(prev); toast.error(err instanceof Error ? err.message : "Erro"); }
   };
 
   const saveTitle = () => {
     if (!titleDraft.trim()) { toast.error("Título não pode ser vazio"); return; }
-    persist({ ...board, title: titleDraft.trim() });
+    const t = titleDraft.trim();
+    setTitle(t);
+    writeLS("ccih_kanban_title", t);
     setEditingTitle(false);
   };
 
-  const addColumn = () => {
+  const addColumn = async () => {
     if (!newColTitle.trim()) { toast.error("Título obrigatório"); return; }
-    const col: KanbanColumn = { id: uid(), title: newColTitle.trim(), order: board.columns.length };
-    persist({ ...board, columns: [...board.columns, col] });
-    setNewColTitle(""); setNewColOpen(false);
+    try {
+      const col = await createColumn(newColTitle.trim(), columns.length);
+      setColumns([...columns, col]);
+      setNewColTitle(""); setNewColOpen(false);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   };
 
-  const addTask = () => {
+  const addTask = async () => {
     if (!newTaskTitle.trim()) { toast.error("Título obrigatório"); return; }
     if (!newTaskCol) { toast.error("Selecione uma coluna"); return; }
-    const t: KanbanTask = { id: uid(), columnId: newTaskCol, title: newTaskTitle.trim(), description: newTaskDesc.trim() || undefined, recurrence: newTaskRecurrence };
-    persist({ ...board, tasks: [...board.tasks, t] });
-    setNewTaskTitle(""); setNewTaskDesc(""); setNewTaskRecurrence("none"); setNewTaskOpen(false);
+    try {
+      const t = await createTask({
+        columnId: newTaskCol,
+        title: newTaskTitle.trim(),
+        description: newTaskDesc.trim() || undefined,
+        recurrence: newTaskRecurrence,
+      });
+      setTasks([...tasks, t]);
+      setNewTaskTitle(""); setNewTaskDesc(""); setNewTaskRecurrence("none"); setNewTaskOpen(false);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   };
 
-  const removeTask = (id: string) => {
-    persist({ ...board, tasks: board.tasks.filter((t) => t.id !== id) });
+  const removeTask = async (id: string) => {
+    const prev = tasks;
+    setTasks(tasks.filter((t) => t.id !== id));
+    try { await deleteTask(id); }
+    catch (e) { setTasks(prev); toast.error(e instanceof Error ? e.message : "Erro"); }
   };
 
-  const saveColTitle = (id: string) => {
+  const saveColTitle = async (id: string) => {
     if (!editingColTitle.trim()) { toast.error("Título não pode ser vazio"); return; }
-    persist({ ...board, columns: board.columns.map((c) => c.id === id ? { ...c, title: editingColTitle.trim() } : c) });
+    const t = editingColTitle.trim();
+    setColumns(columns.map((c) => c.id === id ? { ...c, title: t } : c));
     setEditingColId(null);
+    try { await updateColumnTitle(id, t); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   };
 
-  const confirmRemoveColumn = (mode: "delete" | "move") => {
+  const confirmRemoveColumn = async (mode: "delete" | "move") => {
     if (!removeColId) return;
-    let tasks = board.tasks;
-    if (mode === "delete") {
-      tasks = tasks.filter((t) => t.columnId !== removeColId);
-    } else {
-      if (!moveTargetCol) { toast.error("Selecione a coluna destino"); return; }
-      tasks = tasks.map((t) => t.columnId === removeColId ? { ...t, columnId: moveTargetCol } : t);
-    }
-    const columns = board.columns.filter((c) => c.id !== removeColId).map((c, i) => ({ ...c, order: i }));
-    persist({ ...board, columns, tasks });
-    setRemoveColId(null); setMoveTargetCol("");
+    try {
+      if (mode === "delete") {
+        // cascade deletes tasks via FK
+        await deleteColumn(removeColId);
+        setTasks(tasks.filter((t) => t.columnId !== removeColId));
+      } else {
+        if (!moveTargetCol) { toast.error("Selecione a coluna destino"); return; }
+        await reassignTasks(removeColId, moveTargetCol);
+        await deleteColumn(removeColId);
+        setTasks(tasks.map((t) => t.columnId === removeColId ? { ...t, columnId: moveTargetCol } : t));
+      }
+      const remaining = columns.filter((c) => c.id !== removeColId).map((c, i) => ({ ...c, order: i }));
+      setColumns(remaining);
+      await reorderColumns(remaining.map((c) => ({ id: c.id, position: c.order })));
+      setRemoveColId(null); setMoveTargetCol("");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   };
 
-  const logout = () => { removeLS(STORAGE_KEYS.session); navigate({ to: "/" }); };
+  const logout = async () => { await supabase.auth.signOut(); removeLS(STORAGE_KEYS.session); navigate({ to: "/" }); };
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)]">
