@@ -169,8 +169,8 @@ function KanbanPage() {
             <Button size="sm" variant="ghost" onClick={() => setEditingTitle(false)}>Cancelar</Button>
           </div>
         ) : (
-          <h2 className="text-lg font-semibold cursor-pointer" onClick={() => { setTitleDraft(board.title); setEditingTitle(true); }}>
-            {board.title}
+          <h2 className="text-lg font-semibold cursor-pointer" onClick={() => { setTitleDraft(title); setEditingTitle(true); }}>
+            {title}
           </h2>
         )}
         <div className="flex gap-2">
