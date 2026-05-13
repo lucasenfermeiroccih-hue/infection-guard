@@ -333,6 +333,12 @@ function TaskCard({ task, onRemove, dragging }: { task: KanbanTask; onRemove: ()
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{task.title}</div>
         {task.description && <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</div>}
+        {task.recurrence && task.recurrence !== "none" && (
+          <div className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium bg-primary/10 text-primary rounded px-1.5 py-0.5">
+            <Repeat className="h-3 w-3" />
+            {task.recurrence === "daily" ? "Diária" : task.recurrence === "weekly" ? "Semanal" : "Mensal"}
+          </div>
+        )}
       </div>
       <Button
         variant="ghost"
