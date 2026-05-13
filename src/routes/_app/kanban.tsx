@@ -309,7 +309,7 @@ function ColumnView({
             className="h-7"
           />
         ) : (
-          <button className="font-medium text-sm flex-1 text-left truncate" onClick={onEditTitle}>{column.title}</button>
+          <button className={`font-medium text-sm flex-1 text-left truncate ${tone.text}`} onClick={onEditTitle}>{column.title}</button>
         )}
         <span className="text-xs bg-background border rounded-full px-2 py-0.5">{tasks.length}</span>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}>
