@@ -63,7 +63,7 @@ function DashboardPage() {
   });
 
   useEffect(() => {
-    setActions(readLS<Action5W2H[]>(STORAGE_KEYS.actions, []));
+    listActions().then(setActions).catch(() => setActions([]));
     setBoard(
       readLS<KanbanBoard>(STORAGE_KEYS.kanban, {
         title: "",
