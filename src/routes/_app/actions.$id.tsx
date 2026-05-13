@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import { STORAGE_KEYS, readLS, writeLS } from "@/lib/storage";
 import type { Action5W2H, ActionStatus } from "@/lib/types";
+import { getAction, updateActionStatus, deleteAction } from "@/lib/actions-api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/actions/$id")({
