@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trash2, X, GripVertical, LogOut } from "lucide-react";
 import { STORAGE_KEYS, readLS, writeLS, removeLS, uid } from "@/lib/storage";
-import type { KanbanBoard, KanbanColumn, KanbanTask } from "@/lib/types";
+import type { KanbanBoard, KanbanColumn, KanbanTask, Recurrence } from "@/lib/types";
+import { Repeat } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/kanban")({
