@@ -12,7 +12,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { FileSpreadsheet, FileText } from "lucide-react";
-import { STORAGE_KEYS, readLS } from "@/lib/storage";
+import { listActions } from "@/lib/actions-api";
 import { SECTORS, INFECTION_TYPES, type Action5W2H, type ActionStatus } from "@/lib/types";
 import { toast } from "sonner";
 
