@@ -283,7 +283,7 @@ function KanbanPage() {
               <Select value={moveTargetCol} onValueChange={setMoveTargetCol}>
                 <SelectTrigger><SelectValue placeholder="Selecionar coluna" /></SelectTrigger>
                 <SelectContent>
-                  {board.columns.filter((c) => c.id !== removeColId).map((c) => (
+                  {columns.filter((c) => c.id !== removeColId).map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                   ))}
                 </SelectContent>
