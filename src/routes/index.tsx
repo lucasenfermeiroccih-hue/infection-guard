@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, Fingerprint } from "lucide-react";
-import { STORAGE_KEYS, writeLS, readLS, uid } from "@/lib/storage";
-import type { Session, User } from "@/lib/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ShieldCheck } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { STORAGE_KEYS, writeLS } from "@/lib/storage";
 import { ensureSeed } from "@/lib/seed";
+import type { Session } from "@/lib/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -22,23 +24,56 @@ export const Route = createFileRoute("/")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [credential, setCredential] = useState("");
-  const [token, setToken] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const doLogin = (kind: "credential" | "biometric") => {
-    setLoading(true);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/dashboard" });
+    });
+  }, [navigate]);
+
+  const persistLocalSession = (userId: string, displayName: string) => {
     ensureSeed();
-    const users = readLS<User[]>(STORAGE_KEYS.users, []);
-    const user = users.find((u) => u.role === "ccih") ?? users[0];
-    const session: Session = user
-      ? { userId: user.id, name: user.name, role: user.role }
-      : { userId: uid(), name: "Membro CCIH", role: "ccih" };
-    setTimeout(() => {
-      writeLS(STORAGE_KEYS.session, session);
-      toast.success(kind === "biometric" ? "Biometria validada" : "Acesso autorizado");
+    const session: Session = { userId, name: displayName, role: "ccih" };
+    writeLS(STORAGE_KEYS.session, session);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    if (data.user) {
+      persistLocalSession(data.user.id, data.user.email ?? "Usuário");
+      toast.success("Acesso autorizado");
       navigate({ to: "/dashboard" });
-    }, 350);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const redirectUrl = `${window.location.origin}/dashboard`;
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: redirectUrl, data: { name } },
+    });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    if (data.user) {
+      if (data.session) {
+        persistLocalSession(data.user.id, name || email);
+        toast.success("Conta criada");
+        navigate({ to: "/dashboard" });
+      } else {
+        toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+      }
+    }
   };
 
   return (
@@ -51,29 +86,47 @@ function LoginPage() {
           <CardTitle className="text-2xl">CCIH 5W2H</CardTitle>
           <CardDescription>Controle de Infecção Hospitalar</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="credential">Credencial hospitalar</Label>
-            <Input id="credential" placeholder="usuario@hospital" value={credential} onChange={(e) => setCredential(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="token">Token / senha</Label>
-            <Input id="token" type="password" placeholder="••••••" value={token} onChange={(e) => setToken(e.target.value)} />
-          </div>
-          <Button className="w-full" onClick={() => doLogin("credential")} disabled={loading}>
-            Entrar
-          </Button>
-          <div className="relative my-2">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">ou</span>
-            </div>
-          </div>
-          <Button variant="outline" className="w-full" onClick={() => doLogin("biometric")} disabled={loading}>
-            <Fingerprint className="mr-2 h-4 w-4" />
-            Entrar via biometria
-          </Button>
-          <p className="text-xs text-muted-foreground text-center">
+        <CardContent>
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Entrar</TabsTrigger>
+              <TabsTrigger value="signup">Criar conta</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">E-mail</Label>
+                  <Input id="login-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="usuario@hospital" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-pw">Senha</Label>
+                  <Input id="login-pw" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>Entrar</Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup">
+              <form onSubmit={handleSignup} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name">Nome</Label>
+                  <Input id="signup-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Dr(a). Nome Sobrenome" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">E-mail</Label>
+                  <Input id="signup-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-pw">Senha</Label>
+                  <Input id="signup-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>Criar conta</Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          <p className="text-xs text-muted-foreground text-center mt-4">
             Conformidade ANVISA · RDC 36/2013 · RDC 42/2010
           </p>
         </CardContent>
