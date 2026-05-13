@@ -42,9 +42,11 @@ function AppLayout() {
           <header className="h-14 border-b bg-background flex items-center gap-2 px-3 sticky top-0 z-10">
             <SidebarTrigger />
             <h1 className="text-base font-semibold flex-1 truncate">{title}</h1>
-            <Button asChild size="sm">
-              <Link to="/actions/new"><Plus className="h-4 w-4 mr-1" />Nova Ação</Link>
-            </Button>
+            {path !== "/kanban" && (
+              <Button asChild size="sm">
+                <Link to="/actions/new"><Plus className="h-4 w-4 mr-1" />Nova Ação</Link>
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4 mr-1" />Sair
             </Button>
