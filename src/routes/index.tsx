@@ -30,6 +30,24 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const hospitalId = params.get("hospital_id");
+
+    if (accessToken && refreshToken) {
+      // SSO via IRASControl — restaura a sessão automaticamente
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ data, error }) => {
+        if (!error && data.session) {
+          if (hospitalId) localStorage.setItem("selected_hospital_id", hospitalId);
+          persistLocalSession(data.session.user.id, data.session.user.email ?? "Usuário");
+          window.history.replaceState({}, "", window.location.pathname);
+          navigate({ to: "/dashboard" });
+        }
+      });
+      return;
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/dashboard" });
     });
