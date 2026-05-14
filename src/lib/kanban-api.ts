@@ -29,8 +29,8 @@ async function uid(): Promise<string> {
 
 export async function loadBoard(): Promise<{ columns: KanbanColumn[]; tasks: KanbanTask[] }> {
   const [{ data: cols, error: e1 }, { data: tasks, error: e2 }] = await Promise.all([
-    supabase.from("kanban_columns").select("*").order("position"),
-    supabase.from("kanban_tasks").select("*").order("position"),
+    supabase.from("ccih_kanban_columns").select("*").order("position"),
+    supabase.from("ccih_kanban_tasks").select("*").order("position"),
   ]);
   if (e1) throw e1;
   if (e2) throw e2;
@@ -43,7 +43,7 @@ export async function loadBoard(): Promise<{ columns: KanbanColumn[]; tasks: Kan
 export async function createColumn(title: string, position: number): Promise<KanbanColumn> {
   const user_id = await uid();
   const { data, error } = await supabase
-    .from("kanban_columns")
+    .from("ccih_kanban_columns")
     .insert({ user_id, title, position })
     .select()
     .single();
@@ -52,19 +52,19 @@ export async function createColumn(title: string, position: number): Promise<Kan
 }
 
 export async function updateColumnTitle(id: string, title: string) {
-  const { error } = await supabase.from("kanban_columns").update({ title }).eq("id", id);
+  const { error } = await supabase.from("ccih_kanban_columns").update({ title }).eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteColumn(id: string) {
-  const { error } = await supabase.from("kanban_columns").delete().eq("id", id);
+  const { error } = await supabase.from("ccih_kanban_columns").delete().eq("id", id);
   if (error) throw error;
 }
 
 export async function reorderColumns(ordered: { id: string; position: number }[]) {
   await Promise.all(
     ordered.map(({ id, position }) =>
-      supabase.from("kanban_columns").update({ position }).eq("id", id),
+      supabase.from("ccih_kanban_columns").update({ position }).eq("id", id),
     ),
   );
 }
@@ -77,7 +77,7 @@ export async function createTask(input: {
 }): Promise<KanbanTask> {
   const user_id = await uid();
   const { data, error } = await supabase
-    .from("kanban_tasks")
+    .from("ccih_kanban_tasks")
     .insert({
       user_id,
       column_id: input.columnId,
@@ -93,19 +93,19 @@ export async function createTask(input: {
 }
 
 export async function moveTask(id: string, columnId: string) {
-  const { error } = await supabase.from("kanban_tasks").update({ column_id: columnId }).eq("id", id);
+  const { error } = await supabase.from("ccih_kanban_tasks").update({ column_id: columnId }).eq("id", id);
   if (error) throw error;
 }
 
 export async function reassignTasks(fromColumn: string, toColumn: string) {
   const { error } = await supabase
-    .from("kanban_tasks")
+    .from("ccih_kanban_tasks")
     .update({ column_id: toColumn })
     .eq("column_id", fromColumn);
   if (error) throw error;
 }
 
 export async function deleteTask(id: string) {
-  const { error } = await supabase.from("kanban_tasks").delete().eq("id", id);
+  const { error } = await supabase.from("ccih_kanban_tasks").delete().eq("id", id);
   if (error) throw error;
 }
