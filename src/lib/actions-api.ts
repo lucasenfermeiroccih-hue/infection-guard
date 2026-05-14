@@ -4,6 +4,7 @@ import type { Action5W2H, ActionStatus, InfectionType, Sector } from "./types";
 type Row = {
   id: string;
   user_id: string;
+  hospital_id: string | null;
   what: string;
   why: string;
   where_sector: string;
@@ -16,6 +17,10 @@ type Row = {
   created_at: string;
   updated_at: string;
 };
+
+function getHospitalId(): string | null {
+  return localStorage.getItem("selected_hospital_id");
+}
 
 const fromRow = (r: Row): Action5W2H => ({
   id: r.id,
@@ -32,10 +37,10 @@ const fromRow = (r: Row): Action5W2H => ({
 });
 
 export async function listActions(): Promise<Action5W2H[]> {
-  const { data, error } = await supabase
-    .from("actions")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const hospitalId = getHospitalId();
+  let query = supabase.from("actions").select("*").order("created_at", { ascending: false });
+  if (hospitalId) query = query.eq("hospital_id", hospitalId);
+  const { data, error } = await query;
   if (error) throw error;
   return (data as Row[]).map(fromRow);
 }
@@ -56,6 +61,7 @@ export async function createAction(
     .from("actions")
     .insert({
       user_id: userId,
+      hospital_id: getHospitalId(),
       what: input.what,
       why: input.why,
       where_sector: input.where,
