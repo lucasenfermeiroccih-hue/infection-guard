@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { STORAGE_KEYS, writeLS } from "@/lib/storage";
-import { ensureSeed } from "@/lib/seed";
 import type { Session } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -54,7 +53,6 @@ function LoginPage() {
   }, [navigate]);
 
   const persistLocalSession = (userId: string, displayName: string) => {
-    ensureSeed();
     const session: Session = { userId, name: displayName, role: "ccih" };
     writeLS(STORAGE_KEYS.session, session);
   };

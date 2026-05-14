@@ -12,8 +12,8 @@ import {
   Flame,
   KanbanSquare,
 } from "lucide-react";
-import { STORAGE_KEYS, readLS } from "@/lib/storage";
 import { listActions } from "@/lib/actions-api";
+import { loadBoard } from "@/lib/kanban-api";
 import type { Action5W2H, KanbanBoard } from "@/lib/types";
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -64,13 +64,9 @@ function DashboardPage() {
 
   useEffect(() => {
     listActions().then(setActions).catch(() => setActions([]));
-    setBoard(
-      readLS<KanbanBoard>(STORAGE_KEYS.kanban, {
-        title: "",
-        columns: [],
-        tasks: [],
-      }),
-    );
+    loadBoard()
+      .then(({ columns, tasks }) => setBoard({ title: "Quadro CCIH", columns, tasks }))
+      .catch(() => setBoard({ title: "", columns: [], tasks: [] }));
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, LogOut } from "lucide-react";
 import { STORAGE_KEYS, removeLS, writeLS } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureSeed } from "@/lib/seed";
 import type { Session } from "@/lib/types";
 
 const titles: Record<string, string> = {
@@ -34,8 +33,7 @@ function AppLayout() {
         removeLS(STORAGE_KEYS.session);
         navigate({ to: "/" });
       } else {
-        ensureSeed();
-        const local: Session = {
+                const local: Session = {
           userId: session.user.id,
           name: session.user.email ?? "Usuário",
           role: "ccih",
@@ -47,8 +45,7 @@ function AppLayout() {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) navigate({ to: "/" });
       else {
-        ensureSeed();
-        setChecked(true);
+                setChecked(true);
       }
     });
 
