@@ -602,23 +602,33 @@ function AddCardInline({ onAdd }: { onAdd: (title: string) => void }) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (open) setTimeout(() => ref.current?.focus(), 50);
+    if (open) setTimeout(() => ref.current?.focus(), 80);
   }, [open]);
 
-  const submit = () => {
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+
+  const submit = (e?: React.SyntheticEvent) => {
+    e?.stopPropagation();
     const t = value.trim();
     if (!t) return;
     onAdd(t);
     setValue("");
-    setTimeout(() => ref.current?.focus(), 50);
+    setTimeout(() => ref.current?.focus(), 80);
+  };
+
+  const cancel = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    setOpen(false);
+    setValue("");
   };
 
   if (!open) {
     return (
       <button
+        type="button"
         className="flex items-center gap-1.5 w-full px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-200 rounded-b-xl transition-colors font-medium"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setOpen(true)}
+        onPointerDown={stop}
+        onClick={(e) => { stop(e); setOpen(true); }}
       >
         <Plus className="h-4 w-4" />Adicionar cartão
       </button>
@@ -628,7 +638,8 @@ function AddCardInline({ onAdd }: { onAdd: (title: string) => void }) {
   return (
     <div
       className="px-2 pb-2 pt-1 space-y-2"
-      onPointerDown={(e) => e.stopPropagation()}
+      onPointerDown={stop}
+      onClick={stop}
     >
       <textarea
         ref={ref}
@@ -638,20 +649,28 @@ function AddCardInline({ onAdd }: { onAdd: (title: string) => void }) {
         spellCheck={false}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onPointerDown={(e) => e.stopPropagation()}
+        onPointerDown={stop}
+        onClick={stop}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
-          if (e.key === "Escape") { setOpen(false); setValue(""); }
+          e.stopPropagation();
+          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(e); }
+          if (e.key === "Escape") cancel(e);
         }}
       />
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={submit} onPointerDown={(e) => e.stopPropagation()} className="bg-blue-600 hover:bg-blue-700">
-          Adicionar cartão
-        </Button>
         <button
+          type="button"
+          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium"
+          onPointerDown={stop}
+          onClick={submit}
+        >
+          Adicionar cartão
+        </button>
+        <button
+          type="button"
           className="p-1 text-gray-500 hover:text-gray-800 rounded"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => { setOpen(false); setValue(""); }}
+          onPointerDown={stop}
+          onClick={cancel}
         >
           <X className="h-5 w-5" />
         </button>
@@ -665,26 +684,44 @@ function AddCardInline({ onAdd }: { onAdd: (title: string) => void }) {
 function AddListInline({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) setTimeout(() => ref.current?.focus(), 50);
+    if (open) setTimeout(() => ref.current?.focus(), 80);
   }, [open]);
 
-  const submit = async () => {
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+
+  const submit = async (e?: React.SyntheticEvent) => {
+    e?.stopPropagation();
     const t = value.trim();
-    if (!t) return;
-    await onAdd(t);
+    if (!t || saving) return;
+    setSaving(true);
+    try {
+      await onAdd(t);
+      setValue("");
+      setTimeout(() => ref.current?.focus(), 80);
+    } catch {
+      toast.error("Erro ao criar lista");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancel = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    setOpen(false);
     setValue("");
-    setTimeout(() => ref.current?.focus(), 50);
   };
 
   if (!open) {
     return (
       <button
-        className="flex items-center gap-2 w-72 shrink-0 px-4 py-3 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-xl transition-colors backdrop-blur-sm"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setOpen(true)}
+        type="button"
+        className="flex items-center gap-2 w-72 shrink-0 px-4 py-3 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-xl transition-colors"
+        onPointerDown={stop}
+        onClick={(e) => { stop(e); setOpen(true); }}
       >
         <Plus className="h-5 w-5" />Criar nova lista
       </button>
@@ -694,7 +731,8 @@ function AddListInline({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
   return (
     <div
       className="w-72 shrink-0 bg-[#ebecf0] rounded-xl p-2.5 space-y-2 shadow-xl"
-      onPointerDown={(e) => e.stopPropagation()}
+      onPointerDown={stop}
+      onClick={stop}
     >
       <input
         ref={ref}
@@ -703,21 +741,30 @@ function AddListInline({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
         placeholder="Inserir título da lista..."
         spellCheck={false}
         value={value}
+        onPointerDown={stop}
+        onClick={stop}
         onChange={(e) => setValue(e.target.value)}
-        onPointerDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
-          if (e.key === "Enter") submit();
-          if (e.key === "Escape") { setOpen(false); setValue(""); }
+          e.stopPropagation();
+          if (e.key === "Enter") submit(e);
+          if (e.key === "Escape") cancel(e);
         }}
       />
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={submit} onPointerDown={(e) => e.stopPropagation()} className="bg-blue-600 hover:bg-blue-700">
-          Criar lista
-        </Button>
         <button
+          type="button"
+          disabled={saving}
+          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm rounded-lg font-medium"
+          onPointerDown={stop}
+          onClick={submit}
+        >
+          {saving ? "Criando..." : "Criar lista"}
+        </button>
+        <button
+          type="button"
           className="p-1 text-gray-500 hover:text-gray-800 rounded"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => { setOpen(false); setValue(""); }}
+          onPointerDown={stop}
+          onClick={cancel}
         >
           <X className="h-5 w-5" />
         </button>
