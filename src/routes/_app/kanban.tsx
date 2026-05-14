@@ -601,20 +601,23 @@ function AddCardInline({ onAdd }: { onAdd: (title: string) => void }) {
   const [value, setValue] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { if (open) ref.current?.focus(); }, [open]);
+  useEffect(() => {
+    if (open) setTimeout(() => ref.current?.focus(), 50);
+  }, [open]);
 
   const submit = () => {
     const t = value.trim();
     if (!t) return;
     onAdd(t);
     setValue("");
-    ref.current?.focus();
+    setTimeout(() => ref.current?.focus(), 50);
   };
 
   if (!open) {
     return (
       <button
         className="flex items-center gap-1.5 w-full px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-200 rounded-b-xl transition-colors font-medium"
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={() => setOpen(true)}
       >
         <Plus className="h-4 w-4" />Adicionar cartão
@@ -623,7 +626,10 @@ function AddCardInline({ onAdd }: { onAdd: (title: string) => void }) {
   }
 
   return (
-    <div className="px-2 pb-2 pt-1 space-y-2">
+    <div
+      className="px-2 pb-2 pt-1 space-y-2"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <textarea
         ref={ref}
         rows={3}
@@ -632,11 +638,21 @@ function AddCardInline({ onAdd }: { onAdd: (title: string) => void }) {
         spellCheck={false}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } if (e.key === "Escape") { setOpen(false); setValue(""); } }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+          if (e.key === "Escape") { setOpen(false); setValue(""); }
+        }}
       />
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={submit} className="bg-blue-600 hover:bg-blue-700">Adicionar cartão</Button>
-        <button className="p-1 text-gray-500 hover:text-gray-800 rounded" onClick={() => { setOpen(false); setValue(""); }}>
+        <Button size="sm" onClick={submit} onPointerDown={(e) => e.stopPropagation()} className="bg-blue-600 hover:bg-blue-700">
+          Adicionar cartão
+        </Button>
+        <button
+          className="p-1 text-gray-500 hover:text-gray-800 rounded"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => { setOpen(false); setValue(""); }}
+        >
           <X className="h-5 w-5" />
         </button>
       </div>
@@ -651,20 +667,23 @@ function AddListInline({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
   const [value, setValue] = useState("");
   const ref = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (open) ref.current?.focus(); }, [open]);
+  useEffect(() => {
+    if (open) setTimeout(() => ref.current?.focus(), 50);
+  }, [open]);
 
   const submit = async () => {
     const t = value.trim();
     if (!t) return;
     await onAdd(t);
     setValue("");
-    ref.current?.focus();
+    setTimeout(() => ref.current?.focus(), 50);
   };
 
   if (!open) {
     return (
       <button
         className="flex items-center gap-2 w-72 shrink-0 px-4 py-3 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold rounded-xl transition-colors backdrop-blur-sm"
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={() => setOpen(true)}
       >
         <Plus className="h-5 w-5" />Criar nova lista
@@ -673,7 +692,10 @@ function AddListInline({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
   }
 
   return (
-    <div className="w-72 shrink-0 bg-[#ebecf0] rounded-xl p-2.5 space-y-2 shadow-xl">
+    <div
+      className="w-72 shrink-0 bg-[#ebecf0] rounded-xl p-2.5 space-y-2 shadow-xl"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <input
         ref={ref}
         type="text"
@@ -682,11 +704,21 @@ function AddListInline({ onAdd }: { onAdd: (title: string) => Promise<void> }) {
         spellCheck={false}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") submit(); if (e.key === "Escape") { setOpen(false); setValue(""); } }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+          if (e.key === "Escape") { setOpen(false); setValue(""); }
+        }}
       />
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={submit} className="bg-blue-600 hover:bg-blue-700">Criar lista</Button>
-        <button className="p-1 text-gray-500 hover:text-gray-800 rounded" onClick={() => { setOpen(false); setValue(""); }}>
+        <Button size="sm" onClick={submit} onPointerDown={(e) => e.stopPropagation()} className="bg-blue-600 hover:bg-blue-700">
+          Criar lista
+        </Button>
+        <button
+          className="p-1 text-gray-500 hover:text-gray-800 rounded"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => { setOpen(false); setValue(""); }}
+        >
           <X className="h-5 w-5" />
         </button>
       </div>
