@@ -53,19 +53,36 @@ export interface Action5W2H {
 }
 
 export type Recurrence = "none" | "daily" | "weekly" | "monthly";
+export type TaskPriority = "low" | "normal" | "high";
+export type TaskStatus = "in_progress" | "completed";
+
+export interface HospitalUser {
+  userId: string;
+  fullName: string;
+  email: string;
+}
 
 export interface KanbanTask {
   id: string;
   columnId: string;
+  hospitalId?: string;
   title: string;
   description?: string;
   recurrence?: Recurrence;
+  position: number;
+  assignedTo?: string;
+  assignedBy?: string;
+  assignedToName?: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  lastCompletedAt?: string;
 }
 
 export interface KanbanColumn {
   id: string;
   title: string;
   order: number;
+  hospitalId?: string;
 }
 
 export interface KanbanBoard {

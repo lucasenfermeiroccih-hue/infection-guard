@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Plus, LogOut } from "lucide-react";
 import { STORAGE_KEYS, removeLS, writeLS } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
+import { checkIsAdmin } from "@/lib/kanban-api";
+import { AppContext } from "@/lib/app-context";
 import type { Session } from "@/lib/types";
 
 const titles: Record<string, string> = {
@@ -26,6 +28,7 @@ function AppLayout() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const title = titles[path] ?? (path.startsWith("/actions/") ? "Detalhes da Ação" : "CCIH 5W2H");
   const [checked, setChecked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -33,7 +36,7 @@ function AppLayout() {
         removeLS(STORAGE_KEYS.session);
         navigate({ to: "/" });
       } else {
-                const local: Session = {
+        const local: Session = {
           userId: session.user.id,
           name: session.user.email ?? "Usuário",
           role: "ccih",
@@ -43,9 +46,11 @@ function AppLayout() {
     });
 
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) navigate({ to: "/" });
-      else {
-                setChecked(true);
+      if (!data.session) {
+        navigate({ to: "/" });
+      } else {
+        checkIsAdmin().then(setIsAdmin);
+        setChecked(true);
       }
     });
 
@@ -61,27 +66,29 @@ function AppLayout() {
   if (!checked) return null;
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-muted/30">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 border-b bg-background flex items-center gap-2 px-3 sticky top-0 z-10">
-            <SidebarTrigger />
-            <h1 className="text-base font-semibold flex-1 truncate">{title}</h1>
-            {path !== "/kanban" && (
-              <Button asChild size="sm">
-                <Link to="/actions/new"><Plus className="h-4 w-4 mr-1" />Nova Ação</Link>
+    <AppContext.Provider value={{ isAdmin }}>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-muted/30">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <header className="h-14 border-b bg-background flex items-center gap-2 px-3 sticky top-0 z-10">
+              <SidebarTrigger />
+              <h1 className="text-base font-semibold flex-1 truncate">{title}</h1>
+              {path !== "/kanban" && (
+                <Button asChild size="sm">
+                  <Link to="/actions/new"><Plus className="h-4 w-4 mr-1" />Nova Ação</Link>
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={logout}>
+                <LogOut className="h-4 w-4 mr-1" />Sair
               </Button>
-            )}
-            <Button variant="ghost" size="sm" onClick={logout}>
-              <LogOut className="h-4 w-4 mr-1" />Sair
-            </Button>
-          </header>
-          <main className="flex-1 min-w-0">
-            <Outlet />
-          </main>
+            </header>
+            <main className="flex-1 min-w-0">
+              <Outlet />
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </AppContext.Provider>
   );
 }
