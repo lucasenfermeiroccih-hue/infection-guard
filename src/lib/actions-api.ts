@@ -19,6 +19,7 @@ type Row = {
 };
 
 function getHospitalId(): string | null {
+  if (typeof window === "undefined") return null;
   return localStorage.getItem("selected_hospital_id");
 }
 
@@ -39,7 +40,7 @@ const fromRow = (r: Row): Action5W2H => ({
 export async function listActions(): Promise<Action5W2H[]> {
   const hospitalId = getHospitalId();
   let query = supabase.from("actions").select("*").order("created_at", { ascending: false });
-  if (hospitalId) query = query.eq("hospital_id", hospitalId);
+  if (hospitalId) query = query.eq("hospital_id", hospitalId) as any;
   const { data, error } = await query;
   if (error) throw error;
   return (data as Row[]).map(fromRow);
