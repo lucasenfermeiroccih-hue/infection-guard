@@ -462,10 +462,10 @@ function KanbanPage() {
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5"><UserCircle2 className="h-4 w-4" />Atribuir a</Label>
-              <Select value={newTaskData.assignedTo} onValueChange={(v) => setNewTaskData((p) => ({ ...p, assignedTo: v }))}>
+              <Select value={newTaskData.assignedTo || "__none__"} onValueChange={(v) => setNewTaskData((p) => ({ ...p, assignedTo: v === "__none__" ? "" : v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecionar usuário (opcional)" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">— Sem atribuição —</SelectItem>
+                  <SelectItem value="__none__">— Sem atribuição —</SelectItem>
                   {hospitalUsers.map((u) => (
                     <SelectItem key={u.userId} value={u.userId}>{u.fullName}</SelectItem>
                   ))}
@@ -528,10 +528,10 @@ function KanbanPage() {
             {isAdmin && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5"><UserCircle2 className="h-4 w-4" />Atribuído a</Label>
-                <Select value={editForm.assignedTo} onValueChange={(v) => setEditForm((p) => ({ ...p, assignedTo: v }))}>
+                <Select value={editForm.assignedTo || "__none__"} onValueChange={(v) => setEditForm((p) => ({ ...p, assignedTo: v === "__none__" ? "" : v }))}>
                   <SelectTrigger><SelectValue placeholder="Sem atribuição" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">— Sem atribuição —</SelectItem>
+                    <SelectItem value="__none__">— Sem atribuição —</SelectItem>
                     {hospitalUsers.map((u) => (
                       <SelectItem key={u.userId} value={u.userId}>{u.fullName}</SelectItem>
                     ))}
