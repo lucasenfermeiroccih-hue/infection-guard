@@ -647,6 +647,9 @@ function ColumnHeader({ title, count, dragProps, isAdmin, onRename, onDelete }: 
 
   useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
 
+  // Sincroniza draft quando o título externo muda (após salvar)
+  useEffect(() => { if (!editing) setDraft(title); }, [title, editing]);
+
   const commit = () => {
     const t = draft.trim();
     if (!t) { toast.error("Título não pode ser vazio"); setDraft(title); setEditing(false); return; }
