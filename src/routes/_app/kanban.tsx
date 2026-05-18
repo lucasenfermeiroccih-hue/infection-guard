@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -83,7 +84,7 @@ const PRIORITY_LABELS: Record<KanbanTask["priority"], string> = {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 function KanbanPage() {
-  const { isAdmin } = useAppCtx();
+  const { isAdmin, userId } = useAppCtx();
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [hospitalUsers, setHospitalUsers] = useState<HospitalUser[]>([]);
@@ -98,14 +99,14 @@ function KanbanPage() {
   const [newTaskData, setNewTaskData] = useState({
     title: "", description: "", colId: "",
     recurrence: "none" as Recurrence,
-    assignedTo: "",
+    assignedTo: [] as string[],
     priority: "normal" as KanbanTask["priority"],
   });
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
   const [editForm, setEditForm] = useState({
     title: "", description: "", recurrence: "none" as Recurrence,
-    assignedTo: "", priority: "normal" as KanbanTask["priority"],
+    assignedTo: [] as string[], priority: "normal" as KanbanTask["priority"],
   });
   const [deleteColId, setDeleteColId] = useState<string | null>(null);
   const [moveToColId, setMoveToColId] = useState("");
@@ -115,11 +116,11 @@ function KanbanPage() {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadBoard()
+    loadBoard(isAdmin ? undefined : userId)
       .then((b) => { setColumns(b.columns); setTasks(b.tasks); })
       .catch((e) => toast.error(e.message));
     listHospitalUsers().then(setHospitalUsers);
-  }, []);
+  }, [isAdmin, userId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -225,11 +226,11 @@ function KanbanPage() {
         title: title.trim(),
         description: description.trim() || undefined,
         recurrence,
-        assignedTo: assignedTo || undefined,
+        assignedTo: assignedTo.length > 0 ? assignedTo : undefined,
         priority,
       });
       setTasks((prev) => [...prev, t]);
-      setNewTaskData({ title: "", description: "", colId: sortedCols[0]?.id ?? "", recurrence: "none", assignedTo: "", priority: "normal" });
+      setNewTaskData({ title: "", description: "", colId: sortedCols[0]?.id ?? "", recurrence: "none", assignedTo: [], priority: "normal" });
       setNewTaskOpen(false);
       toast.success("Tarefa criada");
     } catch { toast.error("Erro ao criar tarefa"); }
@@ -261,7 +262,7 @@ function KanbanPage() {
       title: task.title,
       description: task.description ?? "",
       recurrence: task.recurrence ?? "none",
-      assignedTo: task.assignedTo ?? "",
+      assignedTo: task.assignedTo ?? [],
       priority: task.priority,
     });
     setEditTaskOpen(true);
@@ -275,17 +276,19 @@ function KanbanPage() {
         title: editForm.title.trim(),
         description: editForm.description.trim() || null,
         recurrence: editForm.recurrence,
-        assignedTo: editForm.assignedTo || null,
+        assignedTo: editForm.assignedTo.length > 0 ? editForm.assignedTo : null,
         priority: editForm.priority,
       });
-      const assignedUser = hospitalUsers.find((u) => u.userId === editForm.assignedTo);
+      const assignedNames = hospitalUsers
+        .filter((u) => editForm.assignedTo.includes(u.userId))
+        .map((u) => u.fullName);
       setTasks((prev) => prev.map((t) => t.id === editingTask.id ? {
         ...t,
         title: editForm.title.trim(),
         description: editForm.description.trim() || undefined,
         recurrence: editForm.recurrence,
-        assignedTo: editForm.assignedTo || undefined,
-        assignedToName: assignedUser?.fullName,
+        assignedTo: editForm.assignedTo.length > 0 ? editForm.assignedTo : undefined,
+        assignedToNames: assignedNames.length > 0 ? assignedNames : undefined,
         priority: editForm.priority,
       } : t));
       setEditTaskOpen(false);
@@ -462,15 +465,11 @@ function KanbanPage() {
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5"><UserCircle2 className="h-4 w-4" />Atribuir a</Label>
-              <Select value={newTaskData.assignedTo || "__none__"} onValueChange={(v) => setNewTaskData((p) => ({ ...p, assignedTo: v === "__none__" ? "" : v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecionar usuário (opcional)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">— Sem atribuição —</SelectItem>
-                  {hospitalUsers.map((u) => (
-                    <SelectItem key={u.userId} value={u.userId}>{u.fullName}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MultiUserSelect
+                users={hospitalUsers}
+                selected={newTaskData.assignedTo}
+                onChange={(ids) => setNewTaskData((p) => ({ ...p, assignedTo: ids }))}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -528,15 +527,11 @@ function KanbanPage() {
             {isAdmin && (
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5"><UserCircle2 className="h-4 w-4" />Atribuído a</Label>
-                <Select value={editForm.assignedTo || "__none__"} onValueChange={(v) => setEditForm((p) => ({ ...p, assignedTo: v === "__none__" ? "" : v }))}>
-                  <SelectTrigger><SelectValue placeholder="Sem atribuição" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">— Sem atribuição —</SelectItem>
-                    {hospitalUsers.map((u) => (
-                      <SelectItem key={u.userId} value={u.userId}>{u.fullName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MultiUserSelect
+                  users={hospitalUsers}
+                  selected={editForm.assignedTo}
+                  onChange={(ids) => setEditForm((p) => ({ ...p, assignedTo: ids }))}
+                />
               </div>
             )}
           </div>
@@ -581,6 +576,43 @@ function KanbanPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// ─── Multi User Select ────────────────────────────────────────────────────────
+
+function MultiUserSelect({ users, selected, onChange }: {
+  users: HospitalUser[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const toggle = (userId: string) => {
+    onChange(
+      selected.includes(userId)
+        ? selected.filter((id) => id !== userId)
+        : [...selected, userId],
+    );
+  };
+
+  if (users.length === 0) {
+    return <p className="text-sm text-muted-foreground px-1 py-1">Nenhum usuário disponível</p>;
+  }
+
+  return (
+    <div className="rounded-md border bg-background divide-y max-h-44 overflow-y-auto">
+      {users.map((u) => (
+        <label
+          key={u.userId}
+          className="flex items-center gap-3 px-3 py-2 hover:bg-accent cursor-pointer transition-colors select-none"
+        >
+          <Checkbox
+            checked={selected.includes(u.userId)}
+            onCheckedChange={() => toggle(u.userId)}
+          />
+          <span className="text-sm">{u.fullName}</span>
+        </label>
+      ))}
     </div>
   );
 }
@@ -764,11 +796,11 @@ function TaskCard({ task, isAdmin, onDelete, onToggleStatus, onEdit }: {
                 {PRIORITY_LABELS[task.priority]}
               </span>
             )}
-            {task.assignedToName && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full font-medium">
-                <UserCircle2 className="h-3 w-3" />{task.assignedToName}
+            {task.assignedToNames && task.assignedToNames.map((name, i) => (
+              <span key={i} className="inline-flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full font-medium">
+                <UserCircle2 className="h-3 w-3" />{name}
               </span>
-            )}
+            ))}
           </div>
         </div>
 

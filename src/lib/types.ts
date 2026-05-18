@@ -70,9 +70,9 @@ export interface KanbanTask {
   description?: string;
   recurrence?: Recurrence;
   position: number;
-  assignedTo?: string;
+  assignedTo?: string[];
   assignedBy?: string;
-  assignedToName?: string;
+  assignedToNames?: string[];
   priority: TaskPriority;
   status: TaskStatus;
   lastCompletedAt?: string;

@@ -65,6 +65,16 @@ function LoginPage() {
     if (error) return toast.error(error.message);
     if (data.user) {
       persistLocalSession(data.user.id, data.user.email ?? "Usuário");
+      // Seta o hospital automaticamente se ainda não estiver definido
+      if (!localStorage.getItem("selected_hospital_id")) {
+        const { data: huRow } = await (supabase as any)
+          .from("hospital_users")
+          .select("hospital_id")
+          .eq("user_id", data.user.id)
+          .limit(1)
+          .maybeSingle();
+        if (huRow?.hospital_id) localStorage.setItem("selected_hospital_id", huRow.hospital_id);
+      }
       toast.success("Acesso autorizado");
       navigate({ to: "/dashboard" });
     }

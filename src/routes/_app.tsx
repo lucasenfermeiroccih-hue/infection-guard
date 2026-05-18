@@ -29,6 +29,7 @@ function AppLayout() {
   const title = titles[path] ?? (path.startsWith("/actions/") ? "Detalhes da Ação" : "CCIH 5W2H");
   const [checked, setChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -49,6 +50,7 @@ function AppLayout() {
       if (!data.session) {
         navigate({ to: "/" });
       } else {
+        setUserId(data.session.user.id);
         checkIsAdmin().then(setIsAdmin);
         setChecked(true);
       }
@@ -66,7 +68,7 @@ function AppLayout() {
   if (!checked) return null;
 
   return (
-    <AppContext.Provider value={{ isAdmin }}>
+    <AppContext.Provider value={{ isAdmin, userId }}>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-muted/30">
           <AppSidebar />
