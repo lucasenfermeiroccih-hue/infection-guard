@@ -4,4 +4,10 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "routes": [
+    {
+      "pattern": "5w2h.ekaban.irascontrol.com/*",
+      "zone_id": "86cea8a5357120cfe6e506d8683b2f93"
+    }
+  ]
 }
